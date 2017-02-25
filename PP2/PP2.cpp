@@ -3,6 +3,8 @@
 #include "BankClient.h"
 
 
+const std::string HELP_FLAG = "/?";
+
 void PrintHelp()
 {
 	std::cout << "***Help:" << std::endl
@@ -16,17 +18,60 @@ void PrintHelp()
 	std::cout << "***" << std::endl;
 }
 
-int main()
+bool CorrectArqumentsCount(int argc)
 {
-	CBank* bank = new CBank();
-	CBankClient* client1 = bank->CreateClient();
-	CBankClient* client2 = bank->CreateClient();
+	return argc == 2 || argc == 3;
+}
 
-	// TODO: WaitForMultipleObjects
-	while (true)
+bool IsCorrectSynchronizationPrimitives(char * argv[], SynchronizationPrimitives &type)
+{
+	int value = atoi(argv[2]);
+	switch (value)
 	{
-
+	case 1:
+		type = CriticalSection;
+		break;
+	case 2:
+		type = Mutex;
+		break;
+	case 3:
+		type = Semaphore;
+		break;
+	case 4:
+		type = Event;
+		break;
+	default:
+		return false;
 	}
+	return true;
+}
 
-    return 0;
+int main(int argc, char * argv[])
+{
+	if (!CorrectArqumentsCount(argc))
+	{
+		std::cout << "Incorrect arguments count. Usage /? flag to get help" << std::endl;
+		return 1;
+	}
+	if (argv[1] == HELP_FLAG)
+	{
+		PrintHelp();
+		return 1;
+	}
+	size_t clientsCount = size_t(atoi(argv[1]));
+	SynchronizationPrimitives type;
+	if (!IsCorrectSynchronizationPrimitives(argv, type))
+	{
+		std::cout << "Incorrect second argument!";
+		PrintHelp();
+		return 1;
+	}
+	CBank bank(type);
+	for (size_t index = 0; index < clientsCount; ++index)
+	{
+		bank.CreateClient();
+	}
+	bank.CreateThreads();
+	bank.WaitThreads();
+	return 0;
 }
